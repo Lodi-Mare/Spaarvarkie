@@ -2,6 +2,7 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config()
 }
 
+
 const express = require('express')
 const app = express()
 const bcrypt = require('bcrypt')
@@ -40,14 +41,17 @@ app.use(methodOverride('_method'))
 app.use(expressLayouts)
 app.use(express.static('public'))
 
-//db
-const mongoose = require('mongoose')
-mongoose.connect(process.env.DATABASE_URL)
-const db = mongoose.connection
-db.on('error', error => console.error(error))
-db.once('open', () => console.log('Connected to Mongoose'))
-
 app.use('/', indexRouter)
+//db
+const connectDB = require('./config/database')
+const port = process.env.PORT || 3000
+connectDB
+connectDB().then(() => {
+    app.listen(port, () => {
+        console.log(`Server is running, you better catch it!`)
+      })
+})
+
 
 
 
@@ -87,21 +91,16 @@ app.use('/', indexRouter)
 //     return res.redirect('/login')
 // })
 
-function checkAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next()
-    }
-    res.redirect('/login')
-}
+// function checkAuthenticated(req, res, next) {
+//     if (req.isAuthenticated()) {
+//         return next()
+//     }
+//     res.redirect('/login')
+// }
 
-function checkNotAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return res.redirect('/')
-    }
-    next()
-}
-const port = process.env.PORT || 3000
-
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
+// function checkNotAuthenticated(req, res, next) {
+//     if (req.isAuthenticated()) {
+//         return res.redirect('/')
+//     }
+//     next()
+// }
