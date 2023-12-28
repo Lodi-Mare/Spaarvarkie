@@ -15,6 +15,7 @@ const bodyParser = require('body-parser')
 
 const indexRouter = require('./routes/index')
 const authorRouter = require('./routes/authors')
+const bookRouter = require('./routes/books')
 
 const initializePassport = require('./passport-config')
 initializePassport(
@@ -53,6 +54,7 @@ connectDB
 
 app.use('/', indexRouter)
 app.use('/authors', authorRouter)
+app.use('/books', bookRouter)
 
 // routes
 // app.get('/login', checkNotAuthenticated, (req, res) => {
