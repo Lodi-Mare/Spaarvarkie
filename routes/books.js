@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const multer = require('multer')
 const path = require('path')
+const fs = require('fs')
 const Book = require('../models/book')
 const uploadPath = path.join('public', Book.coverImageBasePath)
 const Author = require('../models/author')
@@ -14,22 +15,27 @@ const upload = multer({
 })
 
 // all books route
-router.get('/', async (req, res) => {
-    res.send('All Books')
-    let searchOptions = {}
-    
-    if (req.query.name != null && req.query.name !== '') {
-        searchOptions.name = new RegExp(req.query.name, 'i')
+router.get('/', async (req, res) => {    
+    let query = Book.find()
+
+    if(req.query.title != null && req.query.title != ''){
+        query = query.regex('title', new RegExp(req.query.title, 'i'))
+    } 
+    if(req.query.publishedBefore != null && req.query.publishedBefore != ''){
+        query = query.lte('publishDate', req.query.publishedBefore )
     }
+    if(req.query.publishedAfter != null && req.query.publishedAfter != ''){
+        query = query.gte('publishDate', req.query.publishedAfter )
+    }
+
     try {
-        const books = await Book.find(searchOptions)
+        const books = await query.exec()
         res.render('books/index', {
             books: books,
             searchOptions: req.query
         })
     } catch (err) {
-        res.render('authors/new', {
-            books: books,
+        res.render('books/new', {
             errorMessage: 'Error creating Author'
         });
     }
@@ -42,7 +48,7 @@ router.get('/new',  async (req, res) => {
 
 // create books route
 router.post('/', upload.single('cover'), async (req, res) => {
-    req.file != null ? req.file.filename : null
+    const fileName  = req.file != null ? req.file.filename : null
     const book = new Book({
         title: req.body.title,
         author: req.body.author,
@@ -57,7 +63,10 @@ router.post('/', upload.single('cover'), async (req, res) => {
         // res.redirect(`books/${newBook.id}`)
         res.redirect(`books`)
     } catch{
-        renderNewPage(res, new Book(), hasError)
+        if(book.coverImageName != null ){
+            removeBookCover(book.coverImageName)
+        }
+        renderNewPage(res, book, hasError)
     }
     
 })
@@ -74,6 +83,12 @@ async function renderNewPage(res, book, hasError = false){
     } catch{
         res.redirect('/books')
     }
+}
+
+function removeBookCover(fileName){
+    fs.unlink(path.join(uploadPath, fileName), err => {
+        if(err) console.error(err)
+    })
 }
 
 module.exports = router
